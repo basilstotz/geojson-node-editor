@@ -2,3 +2,7 @@
 **/*~
 *.geojson
 **/*geojson
+geojson-node-editor/config.js
+geojson-node-editor/config.js~
+
+

@@ -67,8 +67,8 @@ function log(type, message){
 let options;
 options = {
     mode: "popup",
-    clientId: "................",
-    redirectUrl: "............",
+    clientId: env.clientID,
+    redirectUrl: env.redirectUrl,
     apiUrl: "https://master.apis.dev.openstreetmap.org",
     scopes: [ "write_api" ]  
 }

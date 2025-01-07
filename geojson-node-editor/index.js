@@ -133,14 +133,12 @@ function calcDiffs(geo,osm){
 		    }else{
 			tags[key]=newValue;
 		    }
-		}else{
-		    different=false
 		}
 	    }else{
-		different=true;
 		if(newValue==="🗑️'" ){
 		    // try to delete non existing key. do nothing. (maybe this is an an error?)
 		}else{
+		    different=true;
 		    tags[key]=newValue;
 		}
 	    }

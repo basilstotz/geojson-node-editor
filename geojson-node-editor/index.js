@@ -1,274 +1,295 @@
 
-let ok=0;
-let warn=1;
-let error=2;
-
-let allOk=true;
-
-let url;
-let sandbox=false;
-let dryrun=false;
-
-/*
-const urlParams = new URLSearchParams(window.location.search);
-
-if(urlParams.has("url"))url=urlParams("url");
-if(urlParams.has("nosandbox"))sandbox=false;
-if(urlParams.has("nodryrun"))dryrun=false;
-*/
-
-// some utils /////////////////////////////////////
-
-function show(value){
-     const node = document.createElement("p");
-     node.innerHTML="<pre>"+JSON.stringify(value,null,2)+"</pre>";
-     document.getElementById("body").appendChild(node);
-
-}
-
-function titel(){
-    const node = document.createElement("h2");
-    node.innerHTML="GeoJSON-Node-Editor (v0.1)";
-    document.getElementById("body").appendChild(node);
-}
-
-function log(type, message){
-    const node = document.createElement("p");
-    let prefix;
-    let postfix="";
-    switch(type){
-    case 0:
-	node.setAttribute("style","color:green");
-	prefix="&nbsp;&nbsp;&nbsp;Info: ";
-	break;
-    case 1:
-	node.setAttribute("style","color:orange");
-	prefix="Warning: ";
-	break;
-    case 2:
-	node.setAttribute("style","color:red");
-	prefix="&nbsp;&nbsp;Error: ";
-	postfix=" Programm aborted"
-	allOk=false;
-	break;
-    default:
-	node.setAttribute("style","color:black");
-	prefix="????";
-	break;
-    }
-    node.innerHTML=prefix+message+postfix;
-    document.getElementById("body").appendChild(node);     
-}
-
-//// start ///////////////////////77
-
-
-
 let options;
-options = {
-    mode: "popup",
-    clientId: env.clientID,
-    redirectUrl: env.redirectUrl,
-    apiUrl: "https://master.apis.dev.openstreetmap.org",
-    scopes: [ "write_api" ]  
+
+function setOptions(sandbox){
+
+    let serverUrl=window.location.href;
+
+    if(sandbox){
+       options = {
+	   mode: "popup",
+	   clientId: env.sandbox.clientId,
+	   redirectUrl: serverUrl+env.sandbox.redirectPage,
+	   apiUrl: "https://master.apis.dev.openstreetmap.org",
+	   scopes: [ "write_api" ]  
+       }
+    }else{
+       options = {
+	   mode: "popup",
+	   clientId: env.openstreetmap.clientId,
+	   redirectUrl: serverUrl+env.sandbox.redirectPage,
+	   scopes: [ "write_api" ]  
+       }	
+    }
+    show(options);
 }
 
-if(!OSM.isLoggedIn()){
-OSM.login(options)
-  .then((arg) => {
-      log(0,"Login is ok");
-  })
-  .catch((arg) => {
-      log(2,"Login to OSM did not work: "+arg);
-  });
-}
 
+let GEODIFFS=false;
 
-
-
-async function uploadChangeset(features){
+async function uploadChangeset(){
 
     let ans;
     let ok=true
 
+    
+    // nicht wegschmeissen !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     try {
         await OSM.authReady;
 	ans = await OSM.uploadChangeset(	    
 	    { created_by: "Geojson-Node-Editor", comment: "fix some tags" },
-	    { create: [], modify: features, delete: [] }
+	    { create: [], modify: GEODIFFS, delete: [] }
 	)} catch (error) {
 	    ok=false;
-	    log(2,"Error: "+error);
+	    log(2," "+error);
 	}
-    if(allOk){
-        if(ok){
-	    log(0,"Successfully uploaded "+features.length+" features. Programm is terminated");
-	}else{
-	    log(2,"An error occured during uplaod. Programm aborted");
-	}
+    //
+
+    if(GEODIFFS){
+	//show(GEODIFFS);
+	if(ok)log(0,"Successfully uploaded "+GEODIFFS.length+" features. Programm is terminated","finish");
+	GEODIFFS=false;
     }else{
-	log(2,"An prior error occured, did not upload features");
+	log(1,"no diffs")
     }
+    
 }
 
 
-async function getFeatures(geo){
 
-    let conflict=false;
+function sortGeoFeatures(geo,osm){
+
     let ok=true;
-    let delOk=true;
-    
-    let features
-    let nodeList=[];
+
+    // sort geo
+    let sorted=[];
     let indexed={};
-    geo.features.forEach( (feature) => {
-	let id=feature.properties.id
-	nodeList.push(id);
-	indexed[id]=feature;
+    geo.forEach( (feature) => { indexed[feature.properties.id]=feature;  });
+    osm.forEach( (feature) => {
+	if(indexed[feature.id]){
+	   sorted.push(indexed[feature.id])
+	  }else{
+	      ok=false
+	  }
     });
     
-    try {
-	features = await OSM.getFeatures("node",nodeList);
-    } catch (error) {
-	ok=false;
-	log(2,error);
-	allOk=false;
-    }
-    //show(features);
+    // check for equal ids
     if(ok){
-	if(nodeList.length!=features.length){
-	    log(2,'Not all Node are found');
-	    allOk=false;
-	}
-
-	// check for conflicts
-
-	for(let i=0;i<features.length;i++){
-	    let feature=features[i];
-	    let newFeature=indexed[feature.id];
-	    let newVersion;
-	    if(newFeature.properties&&newFeature.properties.meta&&newFeature.properties.meta.version){
-		newVersion=newFeature.properties.meta.version;
-	    }else{
-		newVersion=newFeature.properties.version;
-	    }
-	    if(feature.version!=newVersion)conflict=true;
-	}
-	
-	if(conflict){
-	    log(2,"Conflicts found. Programm aborted");
-	    allOk=false;
-	}else{
-	    log(0,"No conflicts")
-
-	    // check for identical
-	    let changedFeatures=[];
-	    let identical=false;
-	    let num=0;
-
-	    for(let i=0;i<features.length;i++){
-		let feature=features[i];
-
-		let tags=feature.tags;
-		let newTags=indexed[feature.id].properties.tags;
-
-		let different=false;
-
-// https://github.com/osm-nz/osm-nz.github.io/blob/main/src/pages/upload/createOsmChangeFromPatchFile.ts
-
-		for (const [key, value] of Object.entries(newTags)) {
-		    if(tags[key]){
-			if(tags[key]!=value){
-			    different=true;
-                            // line 163: updateTags()		
-		            if(value==="🗑️'" ){
-				if(tags.key){ delete tags[key] }
-			    }else{
-				tags[key]=value;
-			    }
-			}
-		    }else{
-			different=true;
-			if(value==="🗑️'" ){
-			    // try to delete non existing key
-			    // delOK=false;
-			}else{
-			    tags[key]=value;
-			}
-			
-			tags[key]=value;
-		    }
-		}
-		if(different){
-		    changedFeatures.push(feature);
-		}else{
-		    num++;
-		}
-		identical=!different;
-	    }
-	    if(identical){
-		log(1,num+" identical features removed. There are now "+changedFeatures.length+" left")
-	    }else{
-		log(0,"No identical features")
-	    }
-
-	    if(changedFeatures.length==0){
-		log(0,"Nothing to do. Programm ist terminated");
-	    }else{
-		if(delOK){
-	           log(0,"Will change "+changedFeatures.length+" features");
-	           show(changedFeatures);
-	            //uploadChangeset(changedFeatures);
-		}else{
-		    log(2,"Error: Attemp to delete non existing tag. Aborting");
-	    }
-	}// if no conflict
-    }else{
-	log(2,"Could not download features. Programm aborted");
-    }//if ok
+       for(let i=0;i<osm.length;i++){
+	   if(osm[i].id!=geo[i].properties.id)ok=false
+       }
+    }
     
+    if(ok){
+	return sorted
+    }else{
+	return false
+    }
+}	       
+
+
+function checkConflicts(geo,osm){
+
+    let conflict=false;
+    for(let i=0;i<geo.length;i++){
+	let feature=osm[i];
+	let newFeature=geo[i];
+
+	let osmVersion=feature.version;
+	let geoVersion;
+	if(newFeature.properties&&newFeature.properties.meta&&newFeature.properties.meta.version){
+	    newVersion=newFeature.properties.meta.version;
+	}else{
+	    newVersion=newFeature.properties.version;
+	}
+	if(osmVersion!=newVersion)conflict=true;
+    }
+    return conflict
+}
+
+function calcDiffs(geo,osm){
+
+    let diffs=[];
+    
+    for(let i=0;i<osm.length;i++){
+
+	let feature=osm[i];
+	
+	let tags=osm[i].tags;	
+	let newTags=geo[i].properties.tags;
+
+	//show(tags);
+	//show(newTags);
+	
+	// https://github.com/osm-nz/osm-nz.github.io/blob/main/src/pages/upload/createOsmChangeFromPatchFile.ts
+	let different=false;
+	for (const [key, newValue] of Object.entries(newTags)) {
+	    if(tags[key]){
+		if(tags[key]!=newValue){
+		    different=true;
+		    // line 163: updateTags()		
+		    if(newValue==="🗑️'" ){
+			if(tags[key]){ delete tags[key] }
+		    }else{
+			tags[key]=newValue;
+		    }
+		}else{
+		    different=false
+		}
+	    }else{
+		different=true;
+		if(newValue==="🗑️'" ){
+		    // try to delete non existing key. do nothing. (maybe this is an an error?)
+		}else{
+		    tags[key]=newValue;
+		}
+	    }
+	} // for tags
+	if(different)diffs.push(feature)
+    } //for osm
+
+    if(diffs.length==osm.length){
+	return diffs;
+    }else{
+	return false
+    }
 }
 
 
+async function getFeatures(geoJSON){
 
-async function getGeoJSON(url) {
-    let maxlen=20;
-      try {
-	  const response = await fetch(url);
-	  if (!response.ok) {
-	      log(2,response.status)
-	      throw new Error(`Response status: ${response.status}`);	
-	  }
-	  const json = await response.json();
-	  //console.log(json);
-	  if(json.type=='FeatureCollection'&&json.features){
-	      log(0,'GeoJSON is ok');
-	      let len=json.features.length;
-	      if(len>0){
-		  log(0, "GeoJSON has "+len+" features");
-		  if(len>maxlen){
-		      log(1,'GeoJSON is too big. It will be truncated to the first '+maxlen+' features');
-		      len=maxlen;
-		  }
-		  let geoOut = { type: "FeatureCollection", features: [] }
-		  for(let j=0;j<len;j++){
-		      geoOut.features.push(json.features[j]);
-		  }    
-		  getFeatures(geoOut);
-	      }else{
-		  log(0,"The geoJSON has no features. Nothing to do. Programm terminated.");
-	      }
-	  }else{
-	      log(2,"File is not geoJSON. Programm aborted");
-	  }
-      } catch (error) {
-	  log(2, error.message);   
-      }	
-  }
+    let geo=geoJSON.features;
+    let osm;
 
+    // make nodeList
+    let nodeList=[];
+    geo.forEach( (feature) => { nodeList.push(feature.properties.id) });
 
-titel();
+    // download features
+    let downloadOk=true;
+    try {
+	osm = await OSM.getFeatures("node",nodeList);
+    } catch (error) {
+	downloadOk=false;
+	log(2," "+error);
+    }
 
-getGeoJSON('https://mydomain.tld/path/to/somewhere/input.geojson');
+    // do the checks and maybe proceed
+    if(downloadOk){
+	log(0,"download of of osm features is ok");
+	// sort
+        let sorted=sortGeoFeatures(geo,osm);
+        if(sorted){
+	    log(0,"the dowloaded feature are compatable with the input");
+	    geo=sorted
+	    // check for conflicts
+	    let conflicts=checkConflicts(geo,osm);
+	    if(!conflicts){
+		log(0,"there are no conflicts");
+		// calc diffs
+		let diffs=calcDiffs(geo,osm);
+		if(diffs){
+		    // and go ...
+		    log(0,"there are no features without changes.")
+		    //show(diffs);
+                    log(0,"will update "+diffs.length+" features");
+                    GEODIFFS=diffs;
+		    document.getElementById("proceed").setAttribute("style","background:red;display:block");
+		    //uploadChangeset(diffs);
+		}else{
+		    log(2,"there are features without changes.");
+		}
+	    }else{
+		log(2,"there are conflicts.");
+	    } 
+	}else{
+            log(2,"the downlaoded features are not compatable with the input features.")
+	}
+    }    
+}
 
-  
+    
+function checkGeoJSON(jsonText){
+    
+    let maxlen=1;
+    let ok=true;
+    let json;
+    
+    log(0,"reading geoJSON is ok");
+
+    // parse input
+    try{
+	json=JSON.parse(jsonText);
+    } catch(e) {
+	log(2," "+e)
+	ok=false;
+    }
+    // check for valid geojson?
+    if(ok&&json.type=='FeatureCollection'&&json.features){
+	log(0,'geoJSON is valid');
+	//check length
+	let len=json.features.length;
+	if(len>0){
+	    log(0, "geoJSON has "+len+" features");
+	    if(len>maxlen){
+		log(1,'geoJSON is too big. It will be truncated to the first '+maxlen+' features');
+		len=maxlen;
+	    }
+	    // check is has only nodes
+	    let onlyNodes=true;
+	    json.features.forEach( (feature) => { if(feature.properties.type!="node"){onlyNodes=false}});
+	    if(onlyNodes){
+	        // and go ...
+		let geoOut = { type: "FeatureCollection", features: [] }
+		for(let j=0;j<len;j++){
+		    geoOut.features.push(json.features[j]);
+		}
+		getFeatures(geoOut);
+	    }else{
+		log(2,"geoJSON feature types  nodes.") 
+	    }
+	 }else{
+	    log(0,"geoJSON has no features. Nothing to do. Programm terminated.");
+	 }
+    }else{
+	log(2,"file is not geoJSON.");
+    }
+}
+
+///// some utils ///////////////////////////////////////////
+
+function show(value){
+     const node = document.createElement("p");
+     node.innerHTML="<pre>"+JSON.stringify(value,null,2)+"</pre>";
+     document.getElementById("work").appendChild(node);
+
+}
+
+function log(type, message, element="work"){
+
+    let prefix;
+    let postfix="";
+    const node = document.createElement("p");
+
+    switch(type){
+    case 0:
+	node.setAttribute("style","color:green;margin-top:4px;margin-bottom:4px");
+	prefix="&nbsp;&nbsp;&nbsp;Info: ";
+	break;
+    case 1:
+	node.setAttribute("style","color:orange;margin-top:4px;margin-bottom:4px");
+	prefix="Warning: ";
+	break;
+    case 2:
+	node.setAttribute("style","color:red;margin-top:4px;margin-bottom:4px");
+	prefix="&nbsp;&nbsp;Error: ";
+	postfix=" programm aborted."
+	break;
+    default:
+	node.setAttribute("style","color:black;margin-top:4px;margin-bottom:4px");
+	prefix="????";
+	break;
+    }
+    node.innerHTML=prefix+message+postfix;
+    document.getElementById(element).appendChild(node);     
+}

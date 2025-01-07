@@ -1,15 +1,119 @@
 <!doctype html>
-<header>
-  <script src="config.js"></script>
+
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <title>GeoJSON-OSM-Editor</title>
+    
     <script src="osm-api.js"></script>
+    <script src="index.js"></script>
+    <script src="config.js"></script>
+    <script>
+      
+      function readFile(file) {
+	  return new Promise((resolve, reject) => {
+	      const reader = new FileReader();
+	      reader.onload = res => { resolve(res.target.result);};
+	      reader.onerror = err => reject(err);
+	      reader.readAsText(file);
+	  });	  
+      }
+      
+      async function onSubmit() {
+	  const file = document.getElementById('inputfile').files[0];
+	  const contents = await readFile(file);
+	  document.getElementById("work").innerHTML="";
+	  document.getElementById("proceed").setAttribute("style","display:none");
+	  document.getElementById("finish").innerHTML="";
+	  
+	  checkGeoJSON(contents);
+      }
+
+      function proceed(){
+	  uploadChangeset();
+	  document.getElementById("proceed").setAttribute("style","display:none");
+      }
+
+      function abort(){
+	  document.getElementById("proceed").setAttribute("style","display:none");
+	  log(0,"upload is canceled. program terminates");
+      }
+
+      function selection(){
+	  let home=document.getElementById("home");           
+	  let server=document.getElementById("server");
+	  ans=server.options[server.selectedIndex].text;
+	  
+	  switch(ans){
+	  case 'Sandbox':
+	      home.setAttribute("style","background:grey;padding:4px");
+	      loginout();
+	      //sandbox=true;
+	      setOptions(true);
+	      break;
+	  case 'Openstreetmap':
+	      home.setAttribute("style","background:red;padding:4px");
+	      loginout();
+	      //sandbox=false;
+	      setOptions(false);
+	      break;
+	  default: console.log(ans)
+	      break;
+	  }
+      }
+
+      function loginout(){  
+	  let loginouter= document.getElementById("loginout")  
+	  if(OSM.isLoggedIn()){
+              OSM.logout();
+	      loginouter.innerHTML="Login";
+	      document.getElementById("inputfile").setAttribute("style","display:none");
+	      document.getElementById("filelabel").setAttribute("style","display:none");
+	  }else{
+	      OSM.login(options)
+		  .then((arg) => {
+		      document.getElementById("work").innerHTML="";
+		      loginouter.innerHTML="Logout";
+		      document.getElementById("inputfile").setAttribute("style","display:inline");
+		      document.getElementById("filelabel").setAttribute("style","display:inline");
+		  })
+		  .catch((arg) => {
+		      log(2,"Login to OSM did not work: "+arg); 
+		  });    
+	  }
+      }
+      
+
+      function onLoad(){
+	  setOptions(true);
+      }
+      
+    </script>
   </head>
 
-  <body style="background:grey" id="body">
-    <script src="index.js"></script>
-  </body>
+  <body onload="onLoad()" style="background:lightgrey" id="body">
+    <h3>geoJSON-Node-Editor</h3>
+    <div id="home" style="background:grey;padding:4px">
 
+      <label for="server">Choose a Server:</label>
+      <select onchange="selection()" id="server">
+	<option value="sandbox">Sandbox</option>
+	<option value="openstreetmap">Openstreetmap</option>
+      </select>
+      &nbsp;
+      <button id="loginout" onclick="loginout()" style="">Login</button>
+      &nbsp;
+      <label id="filelabel" style="display:inline" for="inputfile">Choose a File:</label>
+      <input type="file" style="display:inline" onchange="onSubmit(this)" id="inputfile">
+
+      
+    </div>
+    <div id="work" style="background:white"></div>
+    <div id="proceed" style="display:none">
+      Do you want to proceed?&nbsp;&nbsp;
+      <button onclick="proceed()" style="margin:4px">yes</button>&nbsp;
+      <button onclick="abort()" style="margin:4px">no</button>
+    </div>
+    <div id="finish" style="background:lightgreen"></div>    
+  </body>
 </html>

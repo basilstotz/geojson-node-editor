@@ -1,15 +1,16 @@
 # geojson-node-editor
 A node editor for OSM with geojson input. This project is in a very early stage: Only use it with the OSM-sandbox (https://master.apis.dev.openstreetmap.org).
 
-The editor accepts a differential geoJSON file. This is a standard geoJSON file, with the exeption, that the tags key only contains tags whish you want to manipulate. 
-
-It works in three stages:
-
-## Load the GeoJSON into the browser
-
-## Download the Data from OSM
-
-## Upload the Changes to OSM
+The editor has two components:
+* A browser based application (geojson-node-editor/ in this repo) to upload a diffential geoJSON file.
+* A command line application (geojson-diff/ in this repo) to generate the diffential geoJSON-file using a standard geoJSON file (for example from a geoJSON export at https://overpass-turbo.eu ) and a second geoJSON file with your changes.
 
 
-
+#### geojson-diff
+ ```
+$ geojson-diff --help
+usage: geojson-diff <overpass_geojson> [<new_geojson> [diff_geojson]]
+       if the second arg is not given or "-", the new file is read from stdin
+       if the third arg is not given the output goes to stdout
+```
+The app in written in JavaScript and needs a Node installation in order to run. 

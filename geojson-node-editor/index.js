@@ -127,15 +127,15 @@ function calcDiffs(geo,osm){
 	    if(tags[key]){
 		if(tags[key]!=newValue){
 		    different=true;
-		    // line 163: updateTags()		
-		    if(newValue==="🗑️'" ){
+		    // https://www.compart.com/de/unicode/U+1F5D1		
+		    if(newValue==="🗑️" ){
 			if(tags[key]){ delete tags[key] }
 		    }else{
 			tags[key]=newValue;
 		    }
 		}
 	    }else{
-		if(newValue==="🗑️'" ){
+		if(newValue==="🗑️" ){
 		    // try to delete non existing key. do nothing. (maybe this is an an error?)
 		}else{
 		    different=true;

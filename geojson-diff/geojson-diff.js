@@ -246,7 +246,7 @@ function diffsGeojson(geoOld,geoNew){
 	       for(let i=0;i<oldTagArray.length;i++){
 		   let key=oldTagArray[i];
 		   if(isDeprecated(key)){
-		      outTags[key]="🗑️'"
+		      outTags[key]="🗑️"
 		   }
 	       }
 

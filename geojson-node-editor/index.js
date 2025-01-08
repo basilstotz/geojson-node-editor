@@ -32,25 +32,24 @@ async function uploadChangeset(){
     let ans;
     let ok=true
 
-    
-    // nicht wegschmeissen !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    try {
-        await OSM.authReady;
-	ans = await OSM.uploadChangeset(	    
-	    { created_by: "Geojson-Node-Editor", comment: "fix some tags" },
-	    { create: [], modify: GEODIFFS, delete: [] }
-	)} catch (error) {
-	    ok=false;
-	    log(2," "+error);
-	}
-    //
-
     if(GEODIFFS){
+
+	try {
+	    await OSM.authReady;
+	    ans = await OSM.uploadChangeset(	    
+		{ created_by: "Geojson-Node-Editor", comment: "fix some tags" },
+		{ create: [], modify: GEODIFFS, delete: [] }
+	    )} catch (error) {
+		ok=false;
+		log(2," "+error);
+	    }
+
+
 	//show(GEODIFFS);
 	if(ok)log(0,"Successfully uploaded "+GEODIFFS.length+" features. Programm is terminated","finish");
 	GEODIFFS=false;
     }else{
-	log(1,"no diffs")
+	log(2,"no diffs")
     }
     
 }
@@ -122,28 +121,33 @@ function calcDiffs(geo,osm){
 	//show(newTags);
 	
 	// https://github.com/osm-nz/osm-nz.github.io/blob/main/src/pages/upload/createOsmChangeFromPatchFile.ts
+        let error=false;
 	let different=false;
 	for (const [key, newValue] of Object.entries(newTags)) {
 	    if(tags[key]){
 		if(tags[key]!=newValue){
 		    different=true;
-		    // https://www.compart.com/de/unicode/U+1F5D1		
+		    // https://emojipedia.org/de/papierkorb		
 		    if(newValue==="🗑️" ){
 			if(tags[key]){ delete tags[key] }
 		    }else{
 			tags[key]=newValue;
 		    }
+		}else{
+		    //try to overwrite a tag with the old value  (maybe this is an an error?)
+		    error=true
 		}
 	    }else{
 		if(newValue==="🗑️" ){
 		    // try to delete non existing key. do nothing. (maybe this is an an error?)
+		    error=true
 		}else{
 		    different=true;
 		    tags[key]=newValue;
 		}
 	    }
 	} // for tags
-	if(different)diffs.push(feature)
+	if(different&&!error)diffs.push(feature)
     } //for osm
 
     if(diffs.length==osm.length){

@@ -10,13 +10,32 @@ let geoOldIndexed={};
 
 
 const block = [ "speierlingproject:line","elevation","addr:" ];
-const deprecated= [ "source" ];
+const deprecated= [ ];
 const geoFilter= [
     { key: "addr:town", val: "Münchenstein" },
     { key: "propagation" }
 ];
 
 ////////////////////////////////////////////////////////////
+
+
+function geoFilterToText(){
+
+    let text="";
+    
+    for(let i=0;i<geoFilter.length;i++){
+	item=geoFilter[i];
+	key=item.key;
+	if(item.val){
+	    val=item.val;
+	}else{
+	    val="*"
+	}
+	if(i>0){text+=" AND "};
+	text+="\""+key+"\"=\""+val+"\"";
+    }
+    return text
+}
 
 function read(name){
     return fs.readFileSync(name,{encoding:'utf8', flag:'r'});
@@ -246,7 +265,7 @@ function diffsGeojson(geoOld,geoNew){
 	       for(let i=0;i<oldTagArray.length;i++){
 		   let key=oldTagArray[i];
 		   if(isDeprecated(key)){
-		      outTags[key]="🗑️"
+		      outTags[key]="🗑️'"
 		   }
 	       }
 
@@ -315,16 +334,13 @@ function processGeojson(geoOld,geoNew){
 	geoNew=filter(geoNew);
 
 	anz=0;
-	for(let i=0;i<geoNew.features.length;i++){
-	    let feature=geoNew.features[i];
-	    if(!feature.deny)anz++;
-	}
+	geoNew.features.forEach( (feature) => { if(!feature.deny)anz++ });
 	
 	let geoOut = diffsGeojson(geoOld,geoNew);
 	
 	stderr("blocked tags are "+writeList(block))
 	stderr("deprecated tags are "+writeList(deprecated))
-	stderr(anz+" features in the selection");
+	stderr(anz+" features meet filter condition: "+geoFilterToText());
 	stderr(geoOut.features.length+" features in the changeset");
 
 	if(outFile==""){

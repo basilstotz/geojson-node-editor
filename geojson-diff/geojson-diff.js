@@ -9,9 +9,12 @@ let geoNeu;
 let geoOldIndexed={};
 
 
-let block = [ ];
-let deprecated= [ ];
-let geoFilter = { key: "addr:town", value: "Springfield" }
+const block = [ "speierlingproject:line","elevation","addr:" ];
+const deprecated= [ "source" ];
+const geoFilter= [
+    { key: "addr:town", val: "Münchenstein" },
+    { key: "propagation" }
+];
 
 ////////////////////////////////////////////////////////////
 
@@ -81,21 +84,112 @@ function processGeojson(geoIn){
 }
 */
 
+function checkGeojson(geoOld,geoNew){
 
-function processGeojson(geoOld,geoNew){
-
-    let ok;
-
+    let ok=true;
+    
+    //check for same size
     let numNeu=geoNeu.features.length;
     let numAlt=geoOld.features.length;
-
-    //check for same size
     if(numAlt!=numNeu){
 	stderr("the files have a different number of features")
-	process.exit(1)
-    }else{
-	stderr(numAlt+" features loaded");
+	ok=false
     }
+
+    /*
+    // make index by id
+    let indexed={};
+    for(let i=0;i<geoOld.features.length;i++){
+	let feature=geoOld.features[i];
+	geoOldIndexed[feature.properties.id]=feature;
+    }
+    */
+    
+    for(let i=1;i<geoNew.features.length;i++){
+
+	let ok=true;
+	
+	// checks on features
+	const newFeature=geoNew.features[i];
+	const oldFeature=geoOld.features[i];
+	//let oldFeature=geoOldIndexed[newFeature.properties.id];
+
+	if(newFeature.id!=oldFeature.id){
+	    stderr("the ids do not match");
+	    ok=false
+	}
+
+
+	//checks on properties
+	const oldProperties=oldFeature.properties;
+	const newProperties=newFeature.properties;
+	
+
+	if(oldProperties.type!="node"){
+	    stderr("only nodes are allowed");
+	    ok=false
+	}
+	
+
+	//checks on meta
+	const oldMeta=oldProperties.meta;
+	const newMeta=newProperties.meta;
+	
+	let metaOk=true;
+	const metaKeys= [ "timestamp", "version", "changeset","user","uid" ]
+	for( const key of metaKeys){
+	    if( !(oldMeta[key]&&newMeta[key]) ){
+		metaOk=false;
+	    }else{
+		if(oldMeta[key]!=newMeta[key])metaOk=false;
+	    }	
+	}    
+        if(!metaOk){
+		stderr("metas are not complete or differ");
+		ok=false
+	}	    
+    
+        
+
+	// check for missing tags
+	const oldTags=oldProperties.tags;
+	const newTags=newProperties.tags;
+	
+	for(const [key,val] of Object.entries(oldTags)){
+	    if(!newTags[key]){
+		stderr("missing tag \""+key+"\" in newGeojon in id="+newFeature.properties.id);
+		//ok=false
+	    }
+	}
+	
+    }
+    return ok
+}
+
+function cleanupFeature(feature){
+    
+    let allow;
+    
+    // cleanup feature
+    allow=[ "type","id","properties","geometry" ];
+    for( const key of Object.keys(feature)){
+	if(!allow.includes(key)){
+	    delete feature[key]
+	}
+    }
+    // cleanup properties
+    let properties=feature.properties;
+    allow=[ "type","id","tags","meta" ];
+    for( const key of Object.keys(properties)){
+	if(!allow.includes(key)){
+	    delete properties[key]
+	}
+    }
+    return feature
+}
+
+function diffsGeojson(geoOld,geoNew){
+
     
     // make index by id
     for(let i=0;i<geoOld.features.length;i++){
@@ -104,7 +198,7 @@ function processGeojson(geoOld,geoNew){
     }
 
     let geoOut = { type: "FeatureCollection", features: [] }; 
-    let num=0;
+    let numOut=0;
     
     for(let i=1;i<geoNew.features.length;i++){
 
@@ -113,45 +207,15 @@ function processGeojson(geoOld,geoNew){
         let outFeature = clone(newFeature);
 		
 	let newTags=newFeature.properties.tags;
-	let oldTags=oldFeature.properties.tags;
+	let oldTags=geoOldIndexed[newFeature.properties.id].properties.tags;
 	let outTags=outFeature.properties.tags;
 
-	//if(newTags[geoFilter.key]&&newTags[geoFilter.key]==geoFilter.value){
-        if(newTags["addr:town"]&&newTags["addr:town"]=="Springfield"){
 
-	    num++;
-	    
-	    //check for missing id
-	    if(newFeature.id!=oldFeature.id){
-		stderr(" files have different count of nodes");
-		process.exit(1)
-	    }
-
-	    //check for same version
-	    if(newFeature.properties.meta.version!=oldFeature.properties.meta.version){
-		stderr(" files have different versions id="+newFeature.properties.id);
-		process.exit(1)
-	    }
-
-	    //check for node only
-	    if(newFeature.properties.type!="node"){
-		stderr("only nodes are allowed");
-		process.exit(1)
-	    }
-
-
-	    // check for missing tags
-	    for(const [key,val] of Object.entries(oldTags)){
-		if(!newTags[key]){
-		    stderr("missing tag \""+key+"\" in newGeojon in id="+newFeature.properties.id);
-		    process.exit(1)
-		}
-	    }
-
-
+	//numOut++;
+	if( !(oldFeature["deny"]||newFeature["deny"]) ){
 	    // apply changes
+
 	    for(const [key,val] of Object.entries(newTags)){
-		//if(key!="elevation"){
 		   if(oldTags[key]){
 		       if(oldTags[key]==newTags[key]){
 			   delete outTags[key]
@@ -171,11 +235,12 @@ function processGeojson(geoOld,geoNew){
 	     }
 
 	    let l=Object.keys(outTags).length;
-	    
+
 	   //https://github.com/osm-nz/osm-nz.github.io/blob/main/src/pages/upload/createOsmChangeFromPatchFile.ts#L217
 
 	   // prepare for output
-	   if(l>0){
+	    if(l>0){
+
 	       // mark deprecated tags for removal
 	       let oldTagArray=Object.keys(oldTags);
 	       for(let i=0;i<oldTagArray.length;i++){
@@ -184,45 +249,102 @@ function processGeojson(geoOld,geoNew){
 		      outTags[key]="🗑️'"
 		   }
 	       }
-	       // cleanup
-	       let properties=outFeature.properties
-	       delete properties.pictures_url_prefix
-	       delete properties.pictures
-	       delete properties.project
-	       delete properties.beautify
 
-	     if(i==1000){
-		 stderr(JSON.stringify(oldTags,null,2));
-		 stderr(JSON.stringify(newTags,null,2));
-		 stderr(JSON.stringify(outTags,null,2));
-		 stderr(JSON.stringify(outFeature,null,2));
-	     }
+		outFeature=cleanupFeature(outFeature);
 
-	       geoOut.features.push(outFeature);
+		/*
+	       if(i==1000){
+		   stderr(JSON.stringify(oldTags,null,2));
+		   stderr(JSON.stringify(newTags,null,2));
+		   stderr(JSON.stringify(outTags,null,2));
+		   stderr(JSON.stringify(outFeature,null,2));
+	       }
+		*/
 
-	   }
-	    
-	}// if
-    }// for 
+		geoOut.features.push(outFeature);
 
-    stderr("blocked tags are "+writeList(block))
-    stderr("deprecated tags are "+writeList(deprecated))
-    stderr(geoOut.features.length+" features in the changeset");
+	    }
+	}// id deny	    
+    }
+    return geoOut;
+}
 
-    if(outFile==""){
-        process.stdout.write(JSON.stringify(geoOut,null,2)+'\n');
-    }else{
-	try {
-	    write(outFile,JSON.stringify(geoOut,null,2))
-	} catch (e) {
-	    stderr(" "+e);
-	    process.exit(1);
+function filter(geo){
+
+    
+    let geoOut = { type: "FeatureCollection", features: [] };
+
+    for(let i=0;i<geo.features.length;i++){
+	
+	let feature = geo.features[i];
+	let tags = feature.properties.tags;
+
+	let allow=[];
+	geoFilter.forEach( () => {allow.push(false) });
+
+	for(let i=0;i<geoFilter.length;i++){
+	    let item=geoFilter[i];
+	    let key=item.key;
+	    if(item.val){
+		if(tags[key]&&tags[key]==item.val)allow[i]=true;
+	    }else{
+		if(tags[key])allow[i]=true;
+	    }
 	}
-    }	
+
+	let res=true;
+	allow.forEach( (ans) => { res=( res && ans) }); 
+
+	if(!res)feature["deny"]=true;
+		
+	geoOut.features.push(feature)
+    }
+
+    return geoOut;
 }
 
 ///////////////////////////////////////////////////////////
 
+function processGeojson(geoOld,geoNew){
+
+    stderr("");
+    if(checkGeojson(geoOld,geoNew)){
+        stderr("");
+	stderr(geoNew.features.length+" features loaded");
+
+	geoNew=filter(geoNew);
+
+	anz=0;
+	for(let i=0;i<geoNew.features.length;i++){
+	    let feature=geoNew.features[i];
+	    if(!feature.deny)anz++;
+	}
+	
+	let geoOut = diffsGeojson(geoOld,geoNew);
+	
+	stderr("blocked tags are "+writeList(block))
+	stderr("deprecated tags are "+writeList(deprecated))
+	stderr(anz+" features in the selection");
+	stderr(geoOut.features.length+" features in the changeset");
+
+	if(outFile==""){
+	    process.stdout.write(JSON.stringify(geoOut,null,2)+'\n');
+	}else{
+	    try {
+		write(outFile,JSON.stringify(geoOut,null,2))
+	    } catch (e) {
+		stderr(" "+e);
+		process.exit(1);
+	    }
+	}	
+    }else{
+	stderr("checks not passed. no processing was done")
+    }
+    stderr("");
+}
+	
+	
+   
 var text;
 
 if(process.argv[4]){

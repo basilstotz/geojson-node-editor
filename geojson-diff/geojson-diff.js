@@ -9,14 +9,56 @@ let geoNeu;
 let geoOldIndexed={};
 
 
-const block = [ "speierlingproject:line","ele","addr:" ];
-const deprecated= [ ];
-const geoFilter= [
-    { key: "addr:town", val: "Münchenstein" },
-    { key: "propagation" }
-];
+
+let block = [];
+let deprecated=[];
+let rules=[];
 
 ////////////////////////////////////////////////////////////
+
+class Filter {
+    constructor(rules=[]){
+	this.filter = rules
+    }
+
+    replaceItems(rules=[]){
+	this.filter = rules
+    }
+
+    toString(){
+	let text="";
+	for(let i=0;i<this.filter.length;i++){
+	    item=this.filter[i];
+	    key=item.key;
+	    if(item.val){
+		val=item.val;
+	    }else{
+		val="*"
+	    }
+	    if(i>0){text+=" AND "};
+	    text+="\""+key+"\"=\""+val+"\"";
+	}
+	return text
+    }
+
+    passFilter(object){
+	let allow=[];
+	this.filter.forEach( () => {allow.push(false) });
+	for(let i=0;i<this.filter.length;i++){
+	    let item=this.filter[i];
+	    let key=item.key;
+	    if(item.val){
+		if(object[key]&&object[key]==item.val)allow[i]=true;
+	    }else{
+		if(object[key])allow[i]=true;
+	    }
+	}
+	let res=true;
+	allow.forEach( (ans) => { res=( res && ans) });
+	return res
+    }
+}
+
 
 
 function geoFilterToText(){
@@ -291,10 +333,10 @@ function filter(geo){
 	let tags = feature.properties.tags;
 
 	let allow=[];
-	geoFilter.forEach( () => {allow.push(false) });
+	rules.forEach( () => {allow.push(false) });
 
-	for(let i=0;i<geoFilter.length;i++){
-	    let item=geoFilter[i];
+	for(let i=0;i<rules.length;i++){
+	    let item=rules[i];
 	    let key=item.key;
 	    if(item.val){
 		if(tags[key]&&tags[key]==item.val)allow[i]=true;
@@ -353,7 +395,6 @@ function processGeojson(geoOld,geoNew){
 	
 	
    
-var text;
 
 if(process.argv[4]){
     outFile= process.argv[4]
@@ -365,6 +406,8 @@ if(process.argv[2]){
     if(process.argv[2]=="--help"){
 	usage()
     }else{
+	let text;
+	//read oldgeo
 	try {
 	    text=read(process.argv[2])
 	} catch (e) {
@@ -377,6 +420,22 @@ if(process.argv[2]){
 	    stderr(" "+e);
 	    process.exit(1);
 	}
+	// read config
+	try {
+	    text=read('geojson-diff.config')
+	} catch (e) {
+	    stderr(" "+e);
+	    process.exit(1);
+	}
+	try {
+	    let config = JSON.parse(text);
+	    block = config.block;
+	    deprecated = config.deprecated;
+	    rules = config.rules;
+	} catch (e) {
+	    stderr(" "+e);
+	    process.exit(1);
+	}			  
     }
 }else{
     usage()
@@ -411,4 +470,3 @@ if(process.argv[3]&&process.argv[3]!="-"){
 	processGeojson(geoOld,geoNeu)
     });
 }
-

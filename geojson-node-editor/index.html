@@ -47,13 +47,13 @@
 	  switch(ans){
 	  case 'Sandbox':
 	      home.setAttribute("style","background:grey;padding:4px");
-	      loginout();
+	      if(OSM.isLoggedIn())loginout();
 	      //sandbox=true;
 	      setOptions(true);
 	      break;
 	  case 'Openstreetmap':
 	      home.setAttribute("style","background:red;padding:4px");
-	      loginout();
+	      if(OSM.isLoggedIn())loginout();
 	      //sandbox=false;
 	      setOptions(false);
 	      break;

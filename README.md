@@ -14,3 +14,11 @@ usage: geojson-diff <overpass_geojson> [<new_geojson> [diff_geojson]]
        if the third arg is not given the output goes to stdout
 ```
 The app in written in JavaScript and needs a Node installation in order to run. 
+
+
+#### Hint
+
+There is an api and a commandline tool to automatize overpass queries
+
+https://www.npmjs.com/package/query-overpass
+

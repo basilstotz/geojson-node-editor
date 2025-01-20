@@ -9,7 +9,7 @@ let geoNeu;
 let geoOldIndexed={};
 
 
-const block = [ "speierlingproject:line","elevation","addr:" ];
+const block = [ "speierlingproject:line","ele","addr:" ];
 const deprecated= [ ];
 const geoFilter= [
     { key: "addr:town", val: "Münchenstein" },
@@ -66,16 +66,8 @@ function isBlocked(key){
     return ans
 }
 
-function isDeprecated(key){ 
-    ans=false;
-    for(let i=0;i<deprecated.length;i++){
-	let k=deprecated[i];
-	if(key==k){
-	    ans=true;
-	    continue
-	}
-    }
-    return ans
+function isDeprecated(key){
+    return deprecated.includes(key)
 }
 
 function writeList(list){

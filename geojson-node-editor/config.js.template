@@ -1,0 +1,11 @@
+var env = {
+    sandbox: {
+        clientId: ".........",
+	redirectPage: "land.html"
+    },
+    openstreetmap: {
+        clientId: ".........",
+	redirectPage: "land.html"
+    }
+}
+

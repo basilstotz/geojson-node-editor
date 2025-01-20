@@ -30,13 +30,13 @@ class Filter {
 	for(let i=0;i<this.filter.length;i++){
 	    item=this.filter[i];
 	    key=item.key;
-	    if(item.val){
-		val=item.val;
+	    if(item.value){
+		value=item.value;
 	    }else{
-		val="*"
+		value="*"
 	    }
 	    if(i>0){text+=" AND "};
-	    text+="\""+key+"\"=\""+val+"\"";
+	    text+="\""+key+"\"=\""+value+"\"";
 	}
 	return text
     }
@@ -47,8 +47,8 @@ class Filter {
 	for(let i=0;i<this.filter.length;i++){
 	    let item=this.filter[i];
 	    let key=item.key;
-	    if(item.val){
-		if(object[key]&&object[key]==item.val)allow[i]=true;
+	    if(item.value){
+		if(object[key]&&object[key]==item.value)allow[i]=true;
 	    }else{
 		if(object[key])allow[i]=true;
 	    }
@@ -68,13 +68,13 @@ function geoFilterToText(){
     for(let i=0;i<geoFilter.length;i++){
 	item=geoFilter[i];
 	key=item.key;
-	if(item.val){
-	    val=item.val;
+	if(item.value){
+	    value=item.value;
 	}else{
-	    val="*"
+	    value="*"
 	}
 	if(i>0){text+=" AND "};
-	text+="\""+key+"\"=\""+val+"\"";
+	text+="\""+key+"\"=\""+value+"\"";
     }
     return text
 }
@@ -208,7 +208,7 @@ function checkGeojson(geoOld,geoNew){
 	const oldTags=oldProperties.tags;
 	const newTags=newProperties.tags;
 	
-	for(const [key,val] of Object.entries(oldTags)){
+	for(const [key,value] of Object.entries(oldTags)){
 	    if(!newTags[key]){
 		stderr("missing tag \""+key+"\" in newGeojon in id="+newFeature.properties.id);
 		//ok=false
@@ -268,20 +268,20 @@ function diffsGeojson(geoOld,geoNew){
 	if( !(oldFeature["deny"]||newFeature["deny"]) ){
 	    // apply changes
 
-	    for(const [key,val] of Object.entries(newTags)){
+	    for(const [key,value] of Object.entries(newTags)){
 		   if(oldTags[key]){
 		       if(oldTags[key]==newTags[key]){
 			   delete outTags[key]
 		       }else{
-			   outTags[key]=val;
+			   outTags[key]=value;
 		       }
 		   }else{
-		       outTags[key]=val
+		       outTags[key]=value
 		   }
 	    }
 
 	    // delete blocked tags
-	     for( const [key,val] of Object.entries(outTags)){
+	     for( const [key,value] of Object.entries(outTags)){
 		 if(isBlocked(key)){
 		     delete outTags[key]	
 		 }    
@@ -338,8 +338,8 @@ function filter(geo){
 	for(let i=0;i<rules.length;i++){
 	    let item=rules[i];
 	    let key=item.key;
-	    if(item.val){
-		if(tags[key]&&tags[key]==item.val)allow[i]=true;
+	    if(item.value){
+		if(tags[key]&&tags[key]==item.value)allow[i]=true;
 	    }else{
 		if(tags[key])allow[i]=true;
 	    }

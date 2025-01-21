@@ -1,4 +1,5 @@
 var env = {
+    maxlen: 100,
     sandbox: {
         clientId: ".........",
 	redirectPage: "land.html"

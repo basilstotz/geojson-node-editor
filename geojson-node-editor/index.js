@@ -233,9 +233,9 @@ function checkGeoJSON(jsonText){
 	let len=json.features.length;
 	if(len>0){
 	    log(0, "geoJSON has "+len+" features");
-	    if(len>maxlen){
-		log(1,'geoJSON is too big. It will be truncated to the first '+maxlen+' features');
-		len=maxlen;
+	    if(len>env.maxlen){
+		log(1,'geoJSON is too big. It will be truncated to the first '+env.maxlen+' features');
+		len=env.maxlen;
 	    }
 	    // check is has only nodes
 	    let onlyNodes=true;

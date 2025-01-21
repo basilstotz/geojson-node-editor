@@ -29,6 +29,43 @@
 	  checkGeoJSON(contents);
       }
 
+      function show(value){
+	   const node = document.createElement("p");
+	   node.innerHTML="<pre>"+JSON.stringify(value,null,2)+"</pre>";
+	   document.getElementById("work").appendChild(node);
+
+      }
+
+      function log(type, message, element="work"){
+
+	  let prefix;
+	  let postfix="";
+	  const node = document.createElement("p");
+
+	  switch(type){
+	  case 0:
+	      node.setAttribute("style","color:green;margin-top:4px;margin-bottom:4px");
+	      prefix="&nbsp;&nbsp;&nbsp;Info: ";
+	      break;
+	  case 1:
+	      node.setAttribute("style","color:orange;margin-top:4px;margin-bottom:4px");
+	      prefix="Warning: ";
+	      break;
+	  case 2:
+	      node.setAttribute("style","color:red;margin-top:4px;margin-bottom:4px");
+	      prefix="&nbsp;&nbsp;Error: ";
+	      postfix=" programm aborted."
+	      break;
+	  default:
+	      node.setAttribute("style","color:black;margin-top:4px;margin-bottom:4px");
+	      prefix="????";
+	      break;
+	  }
+	  node.innerHTML=prefix+message+postfix;
+	  document.getElementById(element).appendChild(node);     
+      }
+      
+      
       function proceed(){
 	  uploadChangeset();
 	  document.getElementById("proceed").setAttribute("style","display:none");

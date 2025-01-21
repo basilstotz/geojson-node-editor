@@ -13,6 +13,7 @@ let geoOldIndexed={};
 let block = [];
 let deprecated=[];
 let rules=[];
+let filter= new Filter();
 
 ////////////////////////////////////////////////////////////
 
@@ -21,7 +22,7 @@ class Filter {
 	this.filter = rules
     }
 
-    replaceItems(rules=[]){
+    replaceRules(rules=[]){
 	this.filter = rules
     }
 
@@ -41,7 +42,7 @@ class Filter {
 	return text
     }
 
-    passFilter(object){
+    passRules(object){
 	let allow=[];
 	this.filter.forEach( () => {allow.push(false) });
 	for(let i=0;i<this.filter.length;i++){
@@ -60,7 +61,7 @@ class Filter {
 }
 
 
-
+/*
 function geoFilterToText(){
 
     let text="";
@@ -78,6 +79,7 @@ function geoFilterToText(){
     }
     return text
 }
+*/
 
 function read(name){
     return fs.readFileSync(name,{encoding:'utf8', flag:'r'});
@@ -265,7 +267,7 @@ function diffsGeojson(geoOld,geoNew){
 
 
 	//numOut++;
-	if( !(oldFeature["deny"]||newFeature["deny"]) ){
+	if( filter.passRules(oldTags)){
 	    // apply changes
 
 	    for(const [key,value] of Object.entries(newTags)){
@@ -322,7 +324,8 @@ function diffsGeojson(geoOld,geoNew){
     return geoOut;
 }
 
-function filter(geo){
+/*
+function doFilter(geo){
 
     
     let geoOut = { type: "FeatureCollection", features: [] };
@@ -355,6 +358,7 @@ function filter(geo){
 
     return geoOut;
 }
+*/
 
 ///////////////////////////////////////////////////////////
 
@@ -365,16 +369,16 @@ function processGeojson(geoOld,geoNew){
         stderr("");
 	stderr(geoNew.features.length+" features loaded");
 
-	geoNew=filter(geoNew);
+	//geoNew=filter(geoNew);
 
-	anz=0;
-	geoNew.features.forEach( (feature) => { if(!feature.deny)anz++ });
+	//anz=0;
+	//geoNew.features.forEach( (feature) => { if(!feature.deny)anz++ });
 	
 	let geoOut = diffsGeojson(geoOld,geoNew);
 	
 	stderr("blocked tags are "+writeList(block))
 	stderr("deprecated tags are "+writeList(deprecated))
-	stderr(anz+" features meet filter condition: "+geoFilterToText());
+	stderr('filter rules: '+filter.toString() );
 	stderr(geoOut.features.length+" features in the changeset");
 
 	if(outFile==""){
@@ -431,7 +435,7 @@ if(process.argv[2]){
 	    let config = JSON.parse(text);
 	    block = config.block;
 	    deprecated = config.deprecated;
-	    rules = config.rules;
+	    filter.replaceRules(config.rules);
 	} catch (e) {
 	    stderr(" "+e);
 	    process.exit(1);

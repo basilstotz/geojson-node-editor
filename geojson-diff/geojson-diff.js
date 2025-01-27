@@ -268,11 +268,11 @@ function diffsGeojson(geoOld,geoNew){
 	    if(l>0){
 
 	       // mark deprecated tags for removal
-	       let oldTagArray=Object.keys(oldTags);
+	       let oldTagArray = Object.keys(oldTags);
 	       for(let i=0;i<oldTagArray.length;i++){
-		   let key=oldTagArray[i];
+		   let key = oldTagArray[i];
 		   if(isDeprecated(key)){
-		       outTags[key]="🗑️" ;
+		       outTags[key] = "🗑️" ;
 		   }
 	       }
 

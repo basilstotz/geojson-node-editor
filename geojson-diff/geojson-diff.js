@@ -61,25 +61,6 @@ class Filter {
 }
 
 
-/*
-function geoFilterToText(){
-
-    let text="";
-    
-    for(let i=0;i<geoFilter.length;i++){
-	item=geoFilter[i];
-	key=item.key;
-	if(item.value){
-	    value=item.value;
-	}else{
-	    value="*"
-	}
-	if(i>0){text+=" AND "};
-	text+="\""+key+"\"=\""+value+"\"";
-    }
-    return text
-}
-*/
 
 function read(name){
     return fs.readFileSync(name,{encoding:'utf8', flag:'r'});
@@ -128,16 +109,6 @@ function usage(){
 
 ///////////////////////////////////////////////////////////////////////
 
-/*
-function processGeojson(geoIn){
-
-    var geoOut={ type: "FeatureCollection", features: [] };
-
-    geoIn.features.forEach(
-	(feature) => { geoOut.features.push(reduce(feature)) }
-    );
-}
-*/
 
 function checkGeojson(geoOld,geoNew){
 
@@ -301,7 +272,7 @@ function diffsGeojson(geoOld,geoNew){
 	       for(let i=0;i<oldTagArray.length;i++){
 		   let key=oldTagArray[i];
 		   if(isDeprecated(key)){
-		      outTags[key]="🗑️'"
+		       outTags[key]="🗑️" ;
 		   }
 	       }
 
@@ -324,41 +295,6 @@ function diffsGeojson(geoOld,geoNew){
     return geoOut;
 }
 
-/*
-function doFilter(geo){
-
-    
-    let geoOut = { type: "FeatureCollection", features: [] };
-
-    for(let i=0;i<geo.features.length;i++){
-	
-	let feature = geo.features[i];
-	let tags = feature.properties.tags;
-
-	let allow=[];
-	rules.forEach( () => {allow.push(false) });
-
-	for(let i=0;i<rules.length;i++){
-	    let item=rules[i];
-	    let key=item.key;
-	    if(item.value){
-		if(tags[key]&&tags[key]==item.value)allow[i]=true;
-	    }else{
-		if(tags[key])allow[i]=true;
-	    }
-	}
-
-	let res=true;
-	allow.forEach( (ans) => { res=( res && ans) }); 
-
-	if(!res)feature["deny"]=true;
-		
-	geoOut.features.push(feature)
-    }
-
-    return geoOut;
-}
-*/
 
 ///////////////////////////////////////////////////////////
 

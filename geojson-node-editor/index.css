@@ -1,0 +1,9 @@
+body {
+    background: #eeeeee;
+    font-family: arial;
+}
+
+.inputbox {
+    border-radius: 8px;
+    padding: 12px;
+}

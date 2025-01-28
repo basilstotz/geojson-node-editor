@@ -1,5 +1,9 @@
 
 let options;
+let comment='change some tags';
+
+let GEODIFFS=false;
+
 
 function setOptions(sandbox){
 
@@ -17,15 +21,13 @@ function setOptions(sandbox){
        options = {
 	   mode: "popup",
 	   clientId: env.openstreetmap.clientId,
-	   redirectUrl: serverUrl+env.sandbox.redirectPage,
+	   redirectUrl: serverUrl+env.openstreetmap.redirectPage,
 	   scopes: [ "write_api" ]  
        }	
     }
-    show(options);
+    //show(options);
 }
 
-
-let GEODIFFS=false;
 
 async function uploadChangeset(){
 
@@ -37,7 +39,7 @@ async function uploadChangeset(){
 	try {
 	    await OSM.authReady;
 	    ans = await OSM.uploadChangeset(	    
-		{ created_by: "Geojson-Node-Editor", comment: "fix some tags" },
+		{ created_by: "GeoJSON-Node-Editor", comment: comment },
 		{ create: [], modify: GEODIFFS, delete: [] }
 	    )} catch (error) {
 		ok=false;

@@ -175,6 +175,6 @@
       </span>
     </div>
     
-    <div class="inputbox" id="finish" style="display:none;background:lightgreen"></div>    
+    <div class="inputbox" id="finish" style="display:none"></div>    
   </body>
 </html>

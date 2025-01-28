@@ -48,7 +48,11 @@ async function uploadChangeset(){
 
 
 	//show(GEODIFFS);
-	if(ok)log(0,"Successfully uploaded "+GEODIFFS.length+" features. Programm is terminated","finish");
+	if(ok){
+	    let elm = document.getElementById('finish');
+	    elm.innerHTML="Successfully uploaded "+GEODIFFS.length+" features. Programm is terminated";
+	    elm.setAttribute("style","display:block;background-color:lightgreen");
+	}
 	GEODIFFS=false;
     }else{
 	log(2,"no diffs")

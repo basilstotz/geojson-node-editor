@@ -11,11 +11,28 @@ let geoOldIndexed={};
 
 
 let block = [];
+let blockAffected = [];
+
 let deprecated=[];
+let deprecatedAffected = [];
 let rules=[];
-let filter= new Filter();
+
+let filter;
+let filteredCount=0;
+
+//Color variables
+let red='\033[0;31m'
+let green='\033[0;32m'
+let yellow='\033[0;33m'
+let blue='\033[0;34m'
+let magenta='\033[0;35m'
+let cyan='\033[0;36m'
+// Clear the color after that
+let clear='\033[0m'
+
 
 ////////////////////////////////////////////////////////////
+
 
 class Filter {
     constructor(rules=[]){
@@ -29,8 +46,9 @@ class Filter {
     toString(){
 	let text="";
 	for(let i=0;i<this.filter.length;i++){
-	    item=this.filter[i];
-	    key=item.key;
+	    let item=this.filter[i];
+	    let key=item.key;
+	    let value;
 	    if(item.value){
 		value=item.value;
 	    }else{
@@ -95,9 +113,13 @@ function isDeprecated(key){
     return deprecated.includes(key)
 }
 
+function addToList(list, item){
+    if( ! list.includes(item))list.push(item)
+}
+
 function writeList(list){
     ans=list.join(" ");
-    return "\""+ans+"\"";
+    return red+"\""+ans+"\""+clear;
 }
 
 function usage(){
@@ -256,6 +278,7 @@ function diffsGeojson(geoOld,geoNew){
 	    // delete blocked tags
 	     for( const [key,value] of Object.entries(outTags)){
 		 if(isBlocked(key)){
+		     addToList(blockAffected,key)
 		     delete outTags[key]	
 		 }    
 	     }
@@ -272,6 +295,7 @@ function diffsGeojson(geoOld,geoNew){
 	       for(let i=0;i<oldTagArray.length;i++){
 		   let key = oldTagArray[i];
 		   if(isDeprecated(key)){
+		       addToList(deprecatedAffected,key);
 		       outTags[key] = "🗑️" ;
 		   }
 	       }
@@ -290,7 +314,9 @@ function diffsGeojson(geoOld,geoNew){
 		geoOut.features.push(outFeature);
 
 	    }
-	}// id deny	    
+	}else{
+	    filteredCount++
+	}
     }
     return geoOut;
 }
@@ -303,7 +329,8 @@ function processGeojson(geoOld,geoNew){
     stderr("");
     if(checkGeojson(geoOld,geoNew)){
         stderr("");
-	stderr(geoNew.features.length+" features loaded");
+	stderr(green+'Features'+clear);
+	stderr(yellow+geoNew.features.length+" features loaded"+clear);
 
 	//geoNew=filter(geoNew);
 
@@ -311,11 +338,19 @@ function processGeojson(geoOld,geoNew){
 	//geoNew.features.forEach( (feature) => { if(!feature.deny)anz++ });
 	
 	let geoOut = diffsGeojson(geoOld,geoNew);
+
 	
-	stderr("blocked tags are "+writeList(block))
-	stderr("deprecated tags are "+writeList(deprecated))
-	stderr('filter rules: '+filter.toString() );
-	stderr(geoOut.features.length+" features in the changeset");
+	
+	stderr('filter rules: '+red+filter.toString()+clear );
+	stderr('    affected: '+filteredCount+' features');
+	let num=geoNew.features.length-filteredCount;
+	stderr(yellow+num+' features will be used'+clear);
+	stderr(yellow+geoOut.features.length+" features in the final changeset"+clear);
+        stderr("\n"+green+"Keys"+clear);
+        stderr("blocked keys are: "+writeList(block));
+	stderr("        affected: "+writeList(blockAffected));
+	stderr("deprecated key are "+writeList(deprecated));
+	stderr("         affected: "+writeList(deprecatedAffected));       
 
 	if(outFile==""){
 	    process.stdout.write(JSON.stringify(geoOut,null,2)+'\n');
@@ -362,7 +397,9 @@ if(process.argv[2]){
 	}
 	// read config
 	try {
-	    text=read('geojson-diff.config')
+	    let path=process.cwd()+'/geojson-diff.config';
+	    stderr('config is read from: '+path);
+	    text=read(path)
 	} catch (e) {
 	    stderr(" "+e);
 	    process.exit(1);
@@ -371,7 +408,7 @@ if(process.argv[2]){
 	    let config = JSON.parse(text);
 	    block = config.block;
 	    deprecated = config.deprecated;
-	    filter.replaceRules(config.rules);
+	    filter= new Filter(config.rules);
 	} catch (e) {
 	    stderr(" "+e);
 	    process.exit(1);

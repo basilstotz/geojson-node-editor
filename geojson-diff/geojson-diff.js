@@ -97,7 +97,7 @@ function stderr(text){
     process.stderr.write(text+"\n")
 }
 
-function isBlocked(key){
+function isDenied(key){
     ans=false;
     for(let i=0;i<block.length;i++){
 	let k=block[i];
@@ -126,7 +126,10 @@ function usage(){
     stderr( "usage: geojson-diff <old_geojson> [<new_geojson> [out_geojson]]");
     stderr( "       if the second arg is not given or \"-\", the new file is read from stdin");
     stderr( "       if the third arg is not given the output goes to stdout");
-            process.exit(0)  
+    stderr( 'files: "geojson-diff.config" in the current working directory');
+    
+    
+    process.exit(0)  
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -277,7 +280,7 @@ function diffsGeojson(geoOld,geoNew){
 
 	    // delete blocked tags
 	     for( const [key,value] of Object.entries(outTags)){
-		 if(isBlocked(key)){
+		 if(isDenied(key)){
 		     addToList(blockAffected,key)
 		     delete outTags[key]	
 		 }    

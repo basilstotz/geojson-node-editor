@@ -3,7 +3,9 @@ A node editor for OSM with GeoJSON input. This project is in a very early stage:
 
 The editor has two components:
 * A browser based application (geojson-node-editor in this repo) to upload a changeset to OSM using a special diffential GeoJSON file.
-* A command line application (geojson-diff in this repo) to generate this special diffential GeoJSON-file using a standard GeoJSON file (for example from a geoJSON export at https://overpass-turbo.eu ) and a second GeoJSON file with your changes. It calculates a differential GeoJSON file only containing the the tags which have been changed in the second file.
+* A command line application (geojson-diff in this repo) to generate this special diffential GeoJSON-file using a standard GeoJSON file (for example from a geoJSON export at https://overpass-turbo.eu ) and a second GeoJSON file with your changes. It then calculates a differential GeoJSON file only containing
+  - the features which have changed tags
+  - and these features only contain the tags which have changed.
 
 
 #### geojson-diff

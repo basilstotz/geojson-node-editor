@@ -43,19 +43,17 @@ async function uploadChangeset(){
 		{ create: [], modify: GEODIFFS, delete: [] }
 	    )} catch (error) {
 		ok=false;
-		log(2," "+error);
+		finish(" "+error,false);
 	    }
 
 
 	//show(GEODIFFS);
 	if(ok){
-	    let elm = document.getElementById('finish');
-	    elm.innerHTML="Successfully uploaded "+GEODIFFS.length+" features. Programm is terminated";
-	    elm.setAttribute("style","display:block;background-color:lightgreen");
+	    finish("Successfully uploaded "+GEODIFFS.length+" features.",true);
 	}
 	GEODIFFS=false;
     }else{
-	log(2,"no diffs")
+	finish("no diffs",false)
     }
     
 }
@@ -179,7 +177,7 @@ async function getFeatures(geoJSON){
 	osm = await OSM.getFeatures("node",nodeList);
     } catch (error) {
 	downloadOk=false;
-	log(2," "+error);
+	finish(" "+error,false);
     }
 
     // do the checks and maybe proceed
@@ -205,13 +203,13 @@ async function getFeatures(geoJSON){
 		    document.getElementById("proceed").setAttribute("style","background:red;display:block");
 		    //uploadChangeset(diffs);
 		}else{
-		    log(2,"there are features without changes.");
+		    finish("there are features without changes.",false);
 		}
 	    }else{
-		log(2,"there are conflicts.");
+		finish("there are conflicts.",false);
 	    } 
 	}else{
-            log(2,"the downlaoded features are not compatable with the input features.")
+            finish("the downlaoded features are not compatable with the input features.",false)
 	}
     }    
 }
@@ -229,7 +227,7 @@ function checkGeoJSON(jsonText){
     try{
 	json=JSON.parse(jsonText);
     } catch(e) {
-	log(2," "+e)
+	finish(" "+e,false)
 	ok=false;
     }
     // check for valid geojson?
@@ -254,13 +252,13 @@ function checkGeoJSON(jsonText){
 		}
 		getFeatures(geoOut);
 	    }else{
-		log(2,"geoJSON feature types  nodes.") 
+		finish("geoJSON feature types  nodes.",false); 
 	    }
 	 }else{
-	    log(0,"geoJSON has no features. Nothing to do. Programm terminated.");
+	     finish("geoJSON has no features. Nothing to do.",true);
 	 }
     }else{
-	log(2,"file is not geoJSON.");
+	finish("file is not geoJSON.",false);
     }
 }
 

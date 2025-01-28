@@ -68,7 +68,18 @@
 	  node.innerHTML='<td style="text-align:right">'+prefix+'</td><td style="padding-left:30px;padding-right:10px">'+message+postfix+'</dt>';
 	  document.getElementById(element).appendChild(node);     
       }
-      
+
+      function finish(text,success){
+	  let color;
+	  if(success){
+	      color='lightgreen'
+	  }else{
+	      color='red'
+	  }
+	  let elm = document.getElementById('finish');
+	  elm.innerHTML=text;
+	  elm.setAttribute("style","display:block;background-color:"+color);
+      }
       
       function proceed(){
 	      //uploadChangeset();
@@ -77,7 +88,7 @@
 
       function abort(){
 	  document.getElementById("proceed").setAttribute("style","display:none");
-	  log(0,"upload is canceled. program terminates");
+	  finish("upload is canceled. program terminates",true);
       }
 
       function updateComment(event){
@@ -175,6 +186,6 @@
       </span>
     </div>
     
-    <div class="inputbox" id="finish" style="display:none;background:lightgreen"></div>    
+    <div class="inputbox" id="finish" style="display:none"></div>    
   </body>
 </html>

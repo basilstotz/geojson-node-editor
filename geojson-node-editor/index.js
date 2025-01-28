@@ -200,7 +200,7 @@ async function getFeatures(geoJSON){
 		    //show(diffs);
                     log(0,"will update "+diffs.length+" features");
                     GEODIFFS=diffs;
-		    document.getElementById("proceed").setAttribute("style","background:red;display:block");
+		    document.getElementById("proceed").setAttribute("style","background:orange;display:block");
 		    //uploadChangeset(diffs);
 		}else{
 		    finish("there are features without changes.",false);
@@ -221,7 +221,7 @@ function checkGeoJSON(jsonText){
     let ok=true;
     let json;
     
-    log(0,"reading geoJSON is ok");
+    log(0,"reading GeoJSON is ok");
 
     // parse input
     try{
@@ -232,13 +232,13 @@ function checkGeoJSON(jsonText){
     }
     // check for valid geojson?
     if(ok&&json.type=='FeatureCollection'&&json.features){
-	log(0,'geoJSON is valid');
+	log(0,'GeoJSON is valid');
 	//check length
 	let len=json.features.length;
 	if(len>0){
-	    log(0, "geoJSON has "+len+" features");
+	    log(0, "GeoJSON has "+len+" features");
 	    if(len>env.maxlen){
-		log(1,'geoJSON is too big. It will be truncated to the first '+env.maxlen+' features');
+		log(1,'GeoJSON is too big. It will be truncated to the first '+env.maxlen+' features');
 		len=env.maxlen;
 	    }
 	    // check is has only nodes
@@ -252,13 +252,13 @@ function checkGeoJSON(jsonText){
 		}
 		getFeatures(geoOut);
 	    }else{
-		finish("geoJSON feature types  nodes.",false); 
+		finish("GeoJSON has other types than nodes.",false); 
 	    }
 	 }else{
-	     finish("geoJSON has no features. Nothing to do.",true);
+	     finish("GeoJSON has no features. Nothing to do.",true);
 	 }
     }else{
-	finish("file is not geoJSON.",false);
+	finish("file is not GeoJSON.",false);
     }
 }
 

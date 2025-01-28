@@ -71,24 +71,27 @@
 
       function finish(text,success){
 	  let color;
+	  let postfix;
 	  if(success){
-	      color='lightgreen'
+	      color='lightgreen';
+	      postfix=' programm terminated';
 	  }else{
-	      color='red'
+	      color='red';
+	      postfix=' programm aborted';
 	  }
 	  let elm = document.getElementById('finish');
-	  elm.innerHTML=text;
+	  elm.innerHTML=text+postfix;
 	  elm.setAttribute("style","display:block;background-color:"+color);
       }
       
       function proceed(){
-	      //uploadChangeset();
+	      uploadChangeset();
 	      document.getElementById("proceed").setAttribute("style","display:none");
       }
 
       function abort(){
 	  document.getElementById("proceed").setAttribute("style","display:none");
-	  finish("upload is canceled. program terminates",true);
+	  finish("upload is canceled.",true);
       }
 
       function updateComment(event){
@@ -115,7 +118,7 @@
 	      setOptions(true);
 	      break;
 	  case 'Openstreetmap':
-	      home.setAttribute("style","background:red");
+	      home.setAttribute("style","background:orange");
 	      if(OSM.isLoggedIn())loginout();
 	      //sandbox=false;
 	      setOptions(false);
@@ -141,7 +144,7 @@
 		      document.getElementById("filelabel").setAttribute("style","display:inline");
 		  })
 		  .catch((arg) => {
-		      log(2,"Login to OSM did not work: "+arg); 
+		      finish("Login to OSM did not work: "+arg,false); 
 		  });    
 	  }
       }
@@ -178,11 +181,11 @@
     <div class="inputbox" id="proceed" style="display:none">
       <label id="commentlabel" style="display:inline" for="comment">Comment:</label>
       <input placeholder="your upload comment" type="text" maxsize="50" style="display:inline" id="comment">
-      <!--<button onclick="commentbutton()">set</button>-->
+	&nbsp;&nbsp;&nbsp;
+      <button onclick="abort()">cancel</button>
       <span id="upload" style="display:none">
-	&nbsp;&nbsp;&nbsp;Do you want to proceed?&nbsp;&nbsp;
-	<button onclick="proceed()" style="margin:4px">yes</button>&nbsp;
-	<button onclick="abort()" style="margin:4px">no</button>
+	&nbsp;
+	<button onclick="proceed()">upload</button>
       </span>
     </div>
     

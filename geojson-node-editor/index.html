@@ -3,7 +3,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>GeoJSON-OSM-Editor</title>
+    <title>GeoJSON-Node-Editor</title>
 
     <link rel="stylesheet" href="index.css">
     
@@ -26,7 +26,7 @@
 	  const contents = await readFile(file);
 	  document.getElementById("work").innerHTML="";
 	  document.getElementById("proceed").setAttribute("style","display:none");
-	  document.getElementById("finish").innerHTML="";
+	  document.getElementById("finish").setAttribute("style","display:none");
 	  document.getElementById("comment").value = '';
 	  document.getElementById("upload").setAttribute("style","display:none");
 	  
@@ -71,14 +71,8 @@
       
       
       function proceed(){
-	  let com = document.getElementById("comment").value;
-	  if(com==''){
-	      document.getElementById("upload").setAttribute("style","display:none");
-	  }else{
-	      comment=com;
 	      //uploadChangeset();
 	      document.getElementById("proceed").setAttribute("style","display:none");
-	  }
       }
 
       function abort(){
@@ -86,14 +80,14 @@
 	  log(0,"upload is canceled. program terminates");
       }
 
-      function commentbutton(){
-	  let com = document.getElementById("comment").value;
-	  let elm;
+      function updateComment(event){
+	  let com = event.target.value;
+	  let elm=document.getElementById('upload');
 	  if(com==''){
-	      elm=document.getElementById('upload').setAttribute("style","display:none");
+	      elm.setAttribute("style","display:none");
 	  }else{
 	      comment=com;
-	      elm=document.getElementById('upload').setAttribute("style","display:inline");
+	      elm.setAttribute("style","display:inline");
 	  }
       }
       
@@ -144,7 +138,7 @@
 
       function onLoad(){
 	  setOptions(true);
-	  //document.getElementById('comment').value=comment;
+	  document.getElementById('comment').addEventListener( "input", updateComment );
       }
       
     </script>
@@ -171,7 +165,7 @@
     <div class="inputbox" id="proceed" style="display:none">
       <label id="commentlabel" style="display:inline" for="comment">Comment:</label>
       <input placeholder="your upload comment" type="text" maxsize="50" style="display:inline" id="comment">
-      <button onclick="commentbutton()">set</button>
+      <!--<button onclick="commentbutton()">set</button>-->
       <span id="upload" style="display:none">
 	&nbsp;&nbsp;&nbsp;Do you want to proceed?&nbsp;&nbsp;
 	<button onclick="proceed()" style="margin:4px">yes</button>&nbsp;
@@ -179,6 +173,6 @@
       </span>
     </div>
     
-    <div class="inputbox" id="finish" style="background:lightgreen"></div>    
+    <div class="inputbox" id="finish" style="display:none;background:lightgreen"></div>    
   </body>
 </html>
